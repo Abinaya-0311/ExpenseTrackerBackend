@@ -100,7 +100,7 @@ public class AuthServiceImpl implements AuthService {
             throw new UserVerificationFailedException("Verification failed: expired verification code!");
         }
 
-        user.setVerificationCode(code);
+        user.setVerificationCode(null);
         user.setVerificationCodeExpiryTime(null);
         user.setEnabled(true);
         userRepository.save(user);
