@@ -39,11 +39,14 @@ public class User {
     @NotBlank
     private String password;
 
-    @Size(max = 64)
+    @Column(name = "verification_code")
     private String verificationCode;
 
+    @Column(name = "verification_code_expiry_time")
+    @Temporal(TemporalType.TIMESTAMP)
     private Date verificationCodeExpiryTime;
 
+    @Column(nullable = false)
     private boolean enabled;
 
     private String profileImgUrl;

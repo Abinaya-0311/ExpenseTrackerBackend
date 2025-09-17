@@ -59,15 +59,22 @@ public class AuthServiceImpl implements AuthService {
         try {
             User user = createUser(signUpRequestDto);
 
+            // Log the generated verification code
+            log.info("Generated verification code for {}: {}", user.getEmail(), user.getVerificationCode());
+
             userRepository.save(user);
+
+            // Log after save to confirm it's persisted
+            log.info("User saved with verification code: {}", userRepository.findByEmail(user.getEmail()).getVerificationCode());
+
             notificationService.sendUserRegistrationVerificationEmail(user);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponseDto<>(
                     ApiResponseStatus.SUCCESS, HttpStatus.CREATED,"Verification email has been successfully sent!"
             ));
 
-        }catch(Exception e) {
-            log.error("Registration failed: {}", e.getMessage());
+        } catch(Exception e) {
+            log.error("Registration failed: {}", e.getMessage(), e);
             throw new UserServiceLogicException("Registration failed: Something went wrong!");
         }
 
