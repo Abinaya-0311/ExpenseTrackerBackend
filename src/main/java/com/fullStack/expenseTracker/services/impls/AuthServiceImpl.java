@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 @Component
@@ -64,20 +65,24 @@ public class AuthServiceImpl implements AuthService {
 
             userRepository.save(user);
 
-            // Log after save to confirm it's persisted
-            log.info("User saved with verification code: {}", userRepository.findByEmail(user.getEmail()).getVerificationCode());
+            // Confirm persisted value
+            Optional<User> savedUser = userRepository.findByEmail(user.getEmail());
+            savedUser.ifPresent(u ->
+                    log.info("User saved with verification code: {}", u.getVerificationCode())
+            );
 
+            // Send mail
             notificationService.sendUserRegistrationVerificationEmail(user);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponseDto<>(
-                    ApiResponseStatus.SUCCESS, HttpStatus.CREATED,"Verification email has been successfully sent!"
+                    ApiResponseStatus.SUCCESS, HttpStatus.CREATED,
+                    "Verification email has been successfully sent!"
             ));
 
-        } catch(Exception e) {
+        } catch (Exception e) {
             log.error("Registration failed: {}", e.getMessage(), e);
             throw new UserServiceLogicException("Registration failed: Something went wrong!");
         }
-
     }
 
     @Override
@@ -101,12 +106,14 @@ public class AuthServiceImpl implements AuthService {
         userRepository.save(user);
 
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(new ApiResponseDto<>(
-                ApiResponseStatus.SUCCESS, HttpStatus.ACCEPTED, "Verification successful: User account has been successfully created!"
+                ApiResponseStatus.SUCCESS, HttpStatus.ACCEPTED,
+                "Verification successful: User account has been successfully created!"
         ));
     }
 
     @Override
-    public ResponseEntity<ApiResponseDto<?>> resendVerificationCode(String email) throws UserNotFoundException, UserServiceLogicException {
+    public ResponseEntity<ApiResponseDto<?>> resendVerificationCode(String email)
+            throws UserNotFoundException, UserServiceLogicException {
 
         User user = userService.findByEmail(email);
 
@@ -119,17 +126,19 @@ public class AuthServiceImpl implements AuthService {
             notificationService.sendUserRegistrationVerificationEmail(user);
 
             return ResponseEntity.status(HttpStatus.OK).body(new ApiResponseDto<>(
-                    ApiResponseStatus.SUCCESS, HttpStatus.OK, "Verification email has been resent successfully!")
+                    ApiResponseStatus.SUCCESS, HttpStatus.OK,
+                    "Verification email has been resent successfully!")
             );
-        }catch(Exception e) {
-            log.error("Registration verification failed: {}", e.getMessage());
+        } catch (Exception e) {
+            log.error("Resend verification failed: {}", e.getMessage(), e);
             throw new UserServiceLogicException("Registration failed: Something went wrong!");
         }
-
     }
 
     @Override
-    public ResponseEntity<ApiResponseDto<?>> verifyEmailAndSendForgotPasswordVerificationEmail(String email) throws UserServiceLogicException, UserNotFoundException {
+    public ResponseEntity<ApiResponseDto<?>> verifyEmailAndSendForgotPasswordVerificationEmail(String email)
+            throws UserServiceLogicException, UserNotFoundException {
+
         if (userService.existsByEmail(email)) {
             try {
                 User user = userService.findByEmail(email);
@@ -144,17 +153,18 @@ public class AuthServiceImpl implements AuthService {
                         "Verification successful: Email sent successfully!"
                 ));
             } catch (Exception e) {
-                log.error("Reset password email verification failed: {}", e.getMessage());
+                log.error("Reset password email verification failed: {}", e.getMessage(), e);
                 throw new UserServiceLogicException("Verification failed: Something went wrong!");
             }
         }
 
         throw new UserNotFoundException("Verification failed: User not found with email " + email + "!");
-
     }
 
     @Override
-    public ResponseEntity<ApiResponseDto<?>> verifyForgotPasswordVerification(String code) throws UserVerificationFailedException, UserServiceLogicException {
+    public ResponseEntity<ApiResponseDto<?>> verifyForgotPasswordVerification(String code)
+            throws UserVerificationFailedException, UserServiceLogicException {
+
         User user = userRepository.findByVerificationCode(code);
 
         if (user == null) {
@@ -169,22 +179,24 @@ public class AuthServiceImpl implements AuthService {
         }
 
         try {
-
             user.setVerificationCode(null);
             user.setVerificationCodeExpiryTime(null);
             userRepository.save(user);
 
             return ResponseEntity.status(HttpStatus.ACCEPTED).body(new ApiResponseDto<>(
-                    ApiResponseStatus.SUCCESS, HttpStatus.ACCEPTED, "Verification successful: User account has been verified!"
+                    ApiResponseStatus.SUCCESS, HttpStatus.ACCEPTED,
+                    "Verification successful: User account has been verified!"
             ));
-        }catch(Exception e) {
-            log.error("Reset password verification failed: {}", e.getMessage());
+        } catch (Exception e) {
+            log.error("Reset password verification failed: {}", e.getMessage(), e);
             throw new UserServiceLogicException("Verification failed: Something went wrong!" + e.getMessage());
         }
     }
 
     @Override
-    public ResponseEntity<ApiResponseDto<?>> resetPassword(ResetPasswordRequestDto resetPasswordDto) throws UserNotFoundException, UserServiceLogicException {
+    public ResponseEntity<ApiResponseDto<?>> resetPassword(ResetPasswordRequestDto resetPasswordDto)
+            throws UserNotFoundException, UserServiceLogicException {
+
         if (userService.existsByEmail(resetPasswordDto.getEmail())) {
             try {
                 User user = userService.findByEmail(resetPasswordDto.getEmail());
@@ -199,7 +211,6 @@ public class AuthServiceImpl implements AuthService {
                     }
                 }
                 user.setPassword(passwordEncoder.encode(resetPasswordDto.getNewPassword()));
-
                 userRepository.save(user);
 
                 return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponseDto<>(
@@ -208,13 +219,15 @@ public class AuthServiceImpl implements AuthService {
                         "Reset successful: Password has been successfully reset!"
                 ));
             } catch (Exception e) {
-                log.error("Resetting password failed: {}", e.getMessage());
+                log.error("Resetting password failed: {}", e.getMessage(), e);
                 throw new UserServiceLogicException("Failed to reset your password: Try again later!");
             }
         }
 
         throw new UserNotFoundException("User not found with email " + resetPasswordDto.getEmail());
     }
+
+    // --- Helpers ---
 
     private User createUser(SignUpRequestDto signUpRequestDto) throws RoleNotFoundException {
         return new User(
@@ -249,7 +262,4 @@ public class AuthServiceImpl implements AuthService {
         }
         return roles;
     }
-
-
-
 }
