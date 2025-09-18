@@ -30,6 +30,10 @@ public class SignUpRequestDto {
 
     private Set<String> roles;
 
+    public String getUserName() { return userName; }
+    public String getEmail() { return email; }
+    public String getPassword() { return password; }
+    public Set<String> getRoles() { return roles; }
     @Autowired
     public SignUpRequestDto(String userName, String email, String password) {
         this.userName = userName;

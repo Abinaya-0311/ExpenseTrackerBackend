@@ -28,7 +28,9 @@ public class ResetPasswordRequestDto {
         this.currentPassword = currentPassword;
         this.newPassword = newPassword;
     }
-
+    public String getEmail() { return email; }
+    public String getCurrentPassword() { return currentPassword; }
+    public String getNewPassword() { return newPassword; }
     public ResetPasswordRequestDto(String email, String newPassword) {
         this.email = email;
         this.newPassword = newPassword;
